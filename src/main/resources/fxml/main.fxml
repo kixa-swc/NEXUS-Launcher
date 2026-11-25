@@ -1,0 +1,343 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.*?>
+
+<StackPane fx:id="rootPane" prefWidth="1240.0" prefHeight="720.0" minWidth="1020.0" minHeight="640.0"
+           styleClass="window-root" stylesheets="@../css/styles.css"
+           xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.launcher.controller.MainController">
+    <fx:define>
+        <ToggleGroup fx:id="newsTabGroup"/>
+        <ToggleGroup fx:id="settingsNavGroup"/>
+    </fx:define>
+
+    <StackPane fx:id="frame" styleClass="window-frame">
+
+        <StackPane fx:id="bgLayer" mouseTransparent="true">
+            <ImageView fx:id="heroImage" preserveRatio="false"/>
+            <Region styleClass="hero-shade" mouseTransparent="true"/>
+        </StackPane>
+
+        <StackPane fx:id="appContent" styleClass="app-content" alignment="TOP_LEFT">
+
+            <StackPane fx:id="stagePane" styleClass="stage">
+                <StackPane.margin><Insets left="76"/></StackPane.margin>
+                <AnchorPane fx:id="stageOverlay" pickOnBounds="false">
+
+                    <HBox fx:id="uninstallTip" AnchorPane.topAnchor="74" AnchorPane.leftAnchor="28" styleClass="tip-card" spacing="10" alignment="TOP_LEFT" maxWidth="360">
+                        <VBox spacing="3" HBox.hgrow="ALWAYS">
+                            <Label text="Как полностью удалить лаунчер" styleClass="tip-title"/>
+                            <Label text="1. Откройте Настройки (боковая панель слева)." wrapText="true" styleClass="tip-text"/>
+                            <Label text="2. Вкладка «О программе» → «Удалить NEXUS и все данные…»." wrapText="true" styleClass="tip-text"/>
+                            <Label text="3. Подтвердите и разрешите запрос Windows: удалятся данные, игра, Java и сама программа." wrapText="true" styleClass="tip-text"/>
+                        </VBox>
+                        <Button text="✕" onAction="#dismissUninstallTip" styleClass="tip-close"/>
+                    </HBox>
+
+                    <HBox AnchorPane.topAnchor="16" AnchorPane.rightAnchor="18" spacing="10" alignment="CENTER">
+                        <Button fx:id="aiButton" styleClass="ai-top" onAction="#openAiChat"/>
+                        <Button fx:id="accountButton" styleClass="player-chip" onAction="#openAccounts"/>
+                        <HBox spacing="2" alignment="CENTER">
+                            <Button styleClass="win-btn, icon-button" userData="win-min" onAction="#minimizeWindow"/>
+                            <Button fx:id="maximizeButton" styleClass="win-btn, icon-button" userData="win-max" onAction="#toggleMaximize"/>
+                            <Button styleClass="win-btn, win-close, icon-button" userData="win-close" onAction="#closeWindow"/>
+                        </HBox>
+                    </HBox>
+
+                    <VBox fx:id="heroBox" AnchorPane.leftAnchor="44" AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" alignment="CENTER_LEFT" spacing="12" pickOnBounds="false">
+                        <Label text="Minecraft" styleClass="hero-title"/>
+                        <Label fx:id="heroSubtitle" text="Погрузись в бесконечный мир!" styleClass="hero-subtitle"/>
+                        <HBox spacing="12" alignment="CENTER_LEFT">
+                            <VBox.margin><Insets top="14"/></VBox.margin>
+                            <Button fx:id="versionButton" styleClass="version-chip" onAction="#openVersionMenu"/>
+                            <Label fx:id="launchMetaLabel" text="" styleClass="play-meta"/>
+                        </HBox>
+                    </VBox>
+
+                    <HBox fx:id="newsPanel" AnchorPane.bottomAnchor="24" AnchorPane.leftAnchor="28" styleClass="news-panel" prefHeight="152" minHeight="152" maxHeight="152" visible="false" managed="false">
+                        <StackPane fx:id="newsImageHost" styleClass="news-image-host" minWidth="236" prefWidth="236" maxWidth="236">
+                            <ImageView fx:id="newsImage" fitHeight="152" preserveRatio="true"/>
+                        </StackPane>
+                        <VBox HBox.hgrow="ALWAYS" styleClass="news-body" spacing="6">
+                            <HBox spacing="4" alignment="CENTER_LEFT">
+                                <ToggleButton fx:id="tabNews" text="Новости" selected="true" toggleGroup="$newsTabGroup" styleClass="news-tab"/>
+                            </HBox>
+                            <ListView fx:id="newsListView" styleClass="news-list" VBox.vgrow="ALWAYS" fixedCellSize="34"/>
+                        </VBox>
+                    </HBox>
+
+                    <VBox AnchorPane.bottomAnchor="30" AnchorPane.rightAnchor="32" alignment="BOTTOM_RIGHT" spacing="8" prefWidth="300" minWidth="300" maxWidth="300" pickOnBounds="false">
+                        <Label fx:id="launchStatusLabel" text="" styleClass="play-status" mouseTransparent="true"/>
+                        <HBox spacing="16" alignment="CENTER_RIGHT" pickOnBounds="false">
+                            <Button fx:id="menuButton" styleClass="play-menu, icon-button" userData="menu" onAction="#openLaunchMenu" pickOnBounds="false"/>
+                            <Button fx:id="launchButton" text="Играть" styleClass="play-button" onAction="#handleLaunch" pickOnBounds="false" minWidth="184" prefWidth="184" maxWidth="184"/>
+                        </HBox>
+                        <CheckBox fx:id="fullscreenCheckBox" text="Запускать игру на весь экран" styleClass="play-check" pickOnBounds="false"/>
+                        <Label fx:id="playtimeLabel" text="" styleClass="play-meta" mouseTransparent="true"/>
+                    </VBox>
+                </AnchorPane>
+            </StackPane>
+
+            <VBox fx:id="railPane" styleClass="rail" StackPane.alignment="TOP_LEFT" prefWidth="76" minWidth="76" maxWidth="76" spacing="4">
+                <HBox fx:id="brandRow" styleClass="brand-row" alignment="CENTER_LEFT" spacing="10">
+                    <StackPane fx:id="brandMark" prefWidth="36" prefHeight="36" minWidth="36" minHeight="36" maxWidth="36" maxHeight="36"/>
+                    <Label fx:id="brandName" text="NEXUS" styleClass="brand-name"/>
+                </HBox>
+                <VBox fx:id="navBox" spacing="4">
+                    <VBox.margin><Insets top="18"/></VBox.margin>
+                </VBox>
+                <VBox fx:id="railLoaderBox" spacing="8" styleClass="rail-section">
+                    <Label text="ЗАГРУЗЧИК" styleClass="rail-caption"/>
+                    <HBox fx:id="loaderRail" spacing="8" alignment="CENTER_LEFT"/>
+                </VBox>
+                <Region VBox.vgrow="ALWAYS"/>
+                <HBox fx:id="railFooter" alignment="CENTER_LEFT" spacing="6" styleClass="rail-footer">
+                    <Label fx:id="railTagline" text="Играй. Создавай. Исследуй." styleClass="rail-tagline" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                    <Button fx:id="pinButton" styleClass="rail-pin, icon-button" userData="pin" onAction="#togglePinRail">
+                        <tooltip><Tooltip text="Закрепить панель"/></tooltip>
+                    </Button>
+                </HBox>
+            </VBox>
+        </StackPane>
+
+        <StackPane fx:id="modalLayer" styleClass="modal-scrim" visible="false" managed="false" onMouseClicked="#scrimClicked">
+
+            <VBox fx:id="uninstallDialog" styleClass="dialog, small-dialog" prefWidth="560" maxWidth="560" maxHeight="-Infinity" visible="false" managed="false" spacing="14">
+                <HBox alignment="CENTER_LEFT"><Label text="Удалить NEXUS полностью?" styleClass="dialog-title"/><Region HBox.hgrow="ALWAYS"/><Button styleClass="dialog-close-inline, icon-button" userData="close" onAction="#closeModal"/></HBox>
+                <Label text="⚠ ВСЕ файлы будут удалены безвозвратно — вместе с вашими мирами (saves), скриншотами, модами, ресурспаками и настройками. Установщик Windows удаляет папку программы целиком со всем, что в ней лежит. Сохранить миры при удалении нельзя: если они вам нужны, сначала скопируйте их в другое место." wrapText="true" styleClass="hint" style="-fx-text-fill:#ff8b9b; -fx-font-weight:700;"/>
+                <Label text="Будет удалено:" wrapText="true" styleClass="hint"/>
+                <VBox styleClass="card" spacing="6"><Label fx:id="uninstallListLabel" wrapText="true" text=""/></VBox>
+                <CheckBox fx:id="confirmUninstallCheckBox" text="Я понимаю, что все файлы, включая миры, будут удалены без возможности восстановления" wrapText="true" onAction="#updateUninstallConfirm"/>
+                <HBox spacing="10" alignment="CENTER_RIGHT">
+                    <Button text="Отмена" onAction="#closeModal" styleClass="soft-button"/>
+                    <Button fx:id="confirmUninstallButton" text="Подтвердить и удалить всё" onAction="#confirmUninstall" styleClass="danger-button" disable="true"/>
+                </HBox>
+            </VBox>
+
+            <VBox fx:id="closeDialog" styleClass="dialog, small-dialog" prefWidth="470" maxWidth="470" maxHeight="-Infinity" visible="false" managed="false" spacing="16">
+                <HBox alignment="CENTER_LEFT"><Label text="Закрыть NEXUS?" styleClass="dialog-title"/><Region HBox.hgrow="ALWAYS"/><Button styleClass="dialog-close-inline, icon-button" userData="close" onAction="#closeModal"/></HBox>
+                <VBox spacing="10">
+                    <Button text="Свернуть в трей" onAction="#chooseCloseToTray" styleClass="accent-button" maxWidth="Infinity" prefHeight="44"/>
+                    <Button text="Закрыть полностью" onAction="#chooseCloseExit" styleClass="soft-button" maxWidth="Infinity" prefHeight="44"/>
+                </VBox>
+                <CheckBox fx:id="rememberCloseCheckBox" text="Запомнить мой выбор и больше не спрашивать"/>
+                <Label text="Изменить можно позже: Настройки → Лаунчер → При закрытии окна." wrapText="true" styleClass="hint"/>
+            </VBox>
+
+            <HBox fx:id="settingsDialog" styleClass="dialog" prefWidth="820" maxWidth="820" prefHeight="500" maxHeight="500" visible="false" managed="false">
+                <VBox styleClass="settings-nav" prefWidth="210" minWidth="210" maxWidth="210" spacing="6">
+                    <HBox spacing="10" alignment="CENTER_LEFT" styleClass="settings-title">
+                        <Region fx:id="settingsTitleIcon"/>
+                        <Label text="Настройки" styleClass="dialog-title"/>
+                    </HBox>
+                    <ToggleButton text="Игра" userData="0" selected="true" toggleGroup="$settingsNavGroup" styleClass="nav-item" maxWidth="Infinity"/>
+                    <ToggleButton text="Java и папки" userData="1" toggleGroup="$settingsNavGroup" styleClass="nav-item" maxWidth="Infinity"/>
+                    <ToggleButton text="Лаунчер" userData="2" toggleGroup="$settingsNavGroup" styleClass="nav-item" maxWidth="Infinity"/>
+                    <ToggleButton text="Темы" userData="5" toggleGroup="$settingsNavGroup" styleClass="nav-item" maxWidth="Infinity"/>
+                    <ToggleButton text="Логи и мониторинг" userData="3" toggleGroup="$settingsNavGroup" styleClass="nav-item" maxWidth="Infinity"/>
+                    <ToggleButton text="О программе" userData="4" toggleGroup="$settingsNavGroup" styleClass="nav-item" maxWidth="Infinity"/>
+                </VBox>
+                <StackPane HBox.hgrow="ALWAYS" styleClass="settings-body">
+                    <StackPane fx:id="settingsPages">
+                        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="settings-scroll">
+                            <VBox spacing="14" styleClass="settings-page">
+                                <VBox styleClass="card" spacing="12">
+                                    <Label text="Оперативная память" styleClass="card-title"/>
+                                    <HBox alignment="CENTER_LEFT" spacing="12">
+                                        <Label fx:id="ramLabel" text="4 GB" styleClass="ram-value" minWidth="72"/>
+                                        <Slider fx:id="ramSlider" min="1" max="128" value="4" majorTickUnit="4" blockIncrement="1" snapToTicks="true" HBox.hgrow="ALWAYS"/>
+                                        <TextField fx:id="ramInputField" text="4" prefWidth="78" promptText="Значение"/>
+                                        <ComboBox fx:id="ramUnitComboBox" prefWidth="80"/>
+                                    </HBox>
+                                    <Label fx:id="ramAvailableLabel" text="Обнаружение RAM…" styleClass="hint"/>
+                                </VBox>
+                                <VBox styleClass="card" spacing="12">
+                                    <Label text="Окно Minecraft" styleClass="card-title"/>
+                                    <HBox spacing="8" alignment="CENTER_LEFT">
+                                        <ComboBox fx:id="gameResolutionComboBox" prefWidth="170" promptText="Пресет"/>
+                                        <TextField fx:id="windowWidthField" text="1920" promptText="Ширина" prefWidth="90"/>
+                                        <Label text="×" styleClass="hint"/>
+                                        <TextField fx:id="windowHeightField" text="1080" promptText="Высота" prefWidth="90"/>
+                                    </HBox>
+                                    <Label text="Полноэкранный режим включается флажком под кнопкой «Играть»." styleClass="hint"/>
+                                </VBox>
+                                <VBox styleClass="card" spacing="12">
+                                    <Label text="Аргументы JVM" styleClass="card-title"/>
+                                    <HBox spacing="8" alignment="CENTER_LEFT">
+                                        <ComboBox fx:id="jvmPresetComboBox" prefWidth="210" promptText="Готовый набор"/>
+                                        <TextField fx:id="jvmArgsField" promptText="Например: -XX:+UseZGC -Dfile.encoding=UTF-8" HBox.hgrow="ALWAYS"/>
+                                        <Button fx:id="jvmClearButton" text="Сбросить" styleClass="soft-button"/>
+                                    </HBox>
+                                    <Label text="Добавляются к запуску игры после стандартных. Память лучше менять ползунком выше; если укажете -Xmx здесь, он перекроет ползунок. Неверный аргумент может помешать запуску — тогда нажмите «Сбросить»." styleClass="hint" wrapText="true"/>
+                                </VBox>
+                                <VBox styleClass="card" spacing="12">
+                                    <Label text="Подключение к серверу при запущенной игре" styleClass="card-title"/>
+                                    <ComboBox fx:id="sessionActionComboBox" prefWidth="360"/>
+                                    <Label text="Запущенная игра сама подключится к выбранному серверу: без перезапуска и без нового окна, копировать адрес не нужно. Работает для игр, запущенных из NEXUS 1.8.1 и новее. Если переключить на лету не получится, NEXUS предложит перезапуск или отдельную сессию." styleClass="hint" wrapText="true"/>
+                                </VBox>
+                            </VBox>
+                        </ScrollPane>
+                        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="settings-scroll" visible="false" managed="false">
+                            <VBox spacing="14" styleClass="settings-page">
+                                <VBox styleClass="card" spacing="12">
+                                    <HBox alignment="CENTER_LEFT"><Label text="Java для выбранной версии" styleClass="card-title"/><Region HBox.hgrow="ALWAYS"/><Label fx:id="javaStatusLabel" text="Java: автоопределение" styleClass="status-chip"/></HBox>
+                                    <HBox spacing="8" alignment="CENTER_LEFT">
+                                        <TextField fx:id="javaPathField" editable="false" promptText="Не выбрана — NEXUS найдёт или установит Java сам" HBox.hgrow="ALWAYS"/>
+                                        <Button text="Выбрать java.exe" onAction="#handleSelectJava" styleClass="soft-button"/>
+                                        <Button text="Авто" onAction="#handleAutoJava" styleClass="soft-button"/>
+                                    </HBox>
+                                    <Label text="Если нужной Java нет на ПК, NEXUS установит её в общую папку .nexus/java. Выбранный java.exe запоминается для этой версии Minecraft." wrapText="true" styleClass="hint"/>
+                                </VBox>
+                                <VBox styleClass="card" spacing="12">
+                                    <Label text="Папка Minecraft" styleClass="card-title"/>
+                                    <HBox spacing="8" alignment="CENTER_LEFT">
+                                        <TextField fx:id="minecraftDirField" editable="false" HBox.hgrow="ALWAYS"/>
+                                        <Button text="Выбрать папку" onAction="#handleSelectDirectory" styleClass="soft-button"/>
+                                    </HBox>
+                                </VBox>
+                                <VBox styleClass="card" spacing="12">
+                                    <Label text="Быстрый доступ" styleClass="card-title"/>
+                                    <HBox spacing="8">
+                                        <Button text=".minecraft" onAction="#openMinecraftFolder" styleClass="soft-button" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                                        <Button text="Mods" onAction="#openModsFolder" styleClass="soft-button" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                                        <Button text="Resourcepacks" onAction="#openResourcePacksFolder" styleClass="soft-button" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                                        <Button text="Screenshots" onAction="#openScreenshotsFolder" styleClass="soft-button" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                                    </HBox>
+                                    <Label text="Кнопки открывают папки выбранной версии Minecraft и загрузчика (Fabric, Forge, NeoForge). Папка модов доступна, когда загрузчик установлен." wrapText="true" styleClass="hint"/>
+                                </VBox>
+                            </VBox>
+                        </ScrollPane>
+                        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="settings-scroll" visible="false" managed="false">
+                            <VBox spacing="14" styleClass="settings-page">
+                                <VBox styleClass="card" spacing="10">
+                                    <Label text="Настройки запуска" styleClass="card-title"/>
+                                    <CheckBox fx:id="autostartCheckBox" text="Автозапуск при старте системы" onAction="#handleAutostartToggle"/>
+                                </VBox>
+                                <VBox styleClass="card" spacing="10">
+                                    <Label text="При закрытии окна" styleClass="card-title"/>
+                                    <ComboBox fx:id="closeBehaviorComboBox" prefWidth="260"/>
+                                    <Label text="Свернуть в трей или закрыть полностью — либо спрашивать при каждом закрытии." styleClass="hint"/>
+                                </VBox>
+                                <VBox styleClass="card" spacing="12">
+                                    <Label text="Окно лаунчера" styleClass="card-title"/>
+                                    <HBox spacing="8" alignment="CENTER_LEFT">
+                                        <ComboBox fx:id="launcherResolutionComboBox" prefWidth="170" promptText="Пресет"/>
+                                        <TextField fx:id="launcherWidthField" text="1240" promptText="Ширина" prefWidth="90"/>
+                                        <Label text="×" styleClass="hint"/>
+                                        <TextField fx:id="launcherHeightField" text="720" promptText="Высота" prefWidth="90"/>
+                                        <CheckBox fx:id="launcherFullscreenCheckBox" text="На весь экран"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Button text="Применить" onAction="#handleApplyLauncherWindow" styleClass="accent-button"/>
+                                    </HBox>
+                                    <Label text="Минимальный размер окна — 1020×640. Окно можно растягивать за края, двойной щелчок по верхней панели разворачивает его." wrapText="true" styleClass="hint"/>
+                                </VBox>
+                                <VBox styleClass="card" spacing="12">
+                                    <Label text="Фоновое изображение" styleClass="card-title"/>
+                                    <HBox spacing="8" alignment="CENTER_LEFT">
+                                        <Label fx:id="backgroundPathLabel" text="Стандартный фон" styleClass="hint" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                                        <Button text="Выбрать изображение" onAction="#handleChooseBackground" styleClass="soft-button"/>
+                                        <Button text="Сбросить" onAction="#handleResetBackground" styleClass="soft-button"/>
+                                    </HBox>
+                                </VBox>
+                            </VBox>
+                        </ScrollPane>
+                        <VBox spacing="10" styleClass="settings-page" visible="false" managed="false">
+                            <TabPane fx:id="logsTabPane" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
+                                <tabs>
+                                    <Tab text="Логи лаунчера"><content><TextArea fx:id="launcherGameLogs" editable="false" wrapText="false" text="NEXUS Launcher готов к работе.&#10;"/></content></Tab>
+                                    <Tab text="Мониторинг игры"><content><TextArea fx:id="monitorLogs" editable="false" wrapText="true" text="Мониторинг будет доступен во время работы игры.&#10;"/></content></Tab>
+                                </tabs>
+                            </TabPane>
+                        </VBox>
+                        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="settings-scroll" visible="false" managed="false">
+                            <VBox spacing="14" styleClass="settings-page">
+                                <VBox styleClass="card" spacing="8">
+                                    <Label text="NEXUS Minecraft Launcher" styleClass="card-title"/>
+                                    <Label fx:id="aboutVersionLabel" text="Версия" styleClass="hint"/>
+                                    <Label text="Лаунчер Minecraft: Java Edition с поддержкой Vanilla, Fabric, Forge и NeoForge, Microsoft- и offline-профилей, 3D-просмотром скина и автоматической установкой Java." wrapText="true" styleClass="hint"/>
+                                </VBox>
+                                <VBox styleClass="card" spacing="10">
+                                    <Label text="Удаление" styleClass="card-title"/>
+                                    <Label text="Удаляет данные лаунчера, скачанные версии игры, библиотеки, Java и саму программу NEXUS. Миры и моды можно оставить." wrapText="true" styleClass="hint"/>
+                                    <HBox><Button text="Удалить NEXUS и все данные…" onAction="#openUninstallDialog" styleClass="danger-button"/></HBox>
+                                </VBox>
+                            </VBox>
+                        </ScrollPane>
+                        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="settings-scroll" visible="false" managed="false">
+                            <VBox spacing="14" styleClass="settings-page">
+                                <VBox styleClass="card" spacing="12">
+                                    <Label text="Тема оформления" styleClass="card-title"/>
+                                    <Label text="Тема меняет фон лаунчера, цвета окон и вид всех кнопок, включая «Играть». Выбор применяется сразу. Свой фон из «Окно лаунчера» рисуется поверх фона темы." wrapText="true" styleClass="hint"/>
+                                    <FlowPane fx:id="themeGrid" hgap="10" vgap="10"/>
+                                </VBox>
+                            </VBox>
+                        </ScrollPane>
+                    </StackPane>
+                    <Button styleClass="dialog-close, icon-button" userData="close" StackPane.alignment="TOP_RIGHT" onAction="#closeModal"/>
+                </StackPane>
+            </HBox>
+
+            <VBox fx:id="versionsDialog" styleClass="dialog, small-dialog" prefWidth="560" maxWidth="560" maxHeight="-Infinity" visible="false" managed="false" spacing="16">
+                <HBox alignment="CENTER_LEFT"><Label text="Версия игры" styleClass="dialog-title"/><Region HBox.hgrow="ALWAYS"/><Button styleClass="dialog-close-inline, icon-button" userData="close" onAction="#closeModal"/></HBox>
+                <VBox styleClass="card" spacing="12">
+                    <VBox spacing="6"><Label text="Поиск версии" styleClass="field-label"/><TextField fx:id="versionSearchField" promptText="Введите версию, например 1.21.4, 26.1 или 24w14a (ищет среди всех типов)" prefHeight="40"/></VBox>
+                    <HBox spacing="10">
+                        <VBox spacing="6" HBox.hgrow="ALWAYS"><Label text="Тип версии" styleClass="field-label"/><ComboBox fx:id="versionFilterComboBox" maxWidth="Infinity" prefHeight="40"/></VBox>
+                        <VBox spacing="6" HBox.hgrow="ALWAYS"><Label text="Версия Minecraft" styleClass="field-label"/><ComboBox fx:id="versionComboBox" maxWidth="Infinity" prefHeight="40"/></VBox>
+                    </HBox>
+                    <HBox spacing="10">
+                        <VBox spacing="6" prefWidth="170"><Label text="Модификация" styleClass="field-label"/><ComboBox fx:id="modLoaderComboBox" maxWidth="Infinity" prefHeight="40"/></VBox>
+                        <VBox spacing="6" HBox.hgrow="ALWAYS"><Label text="Версия загрузчика" styleClass="field-label"/><ComboBox fx:id="loaderVersionComboBox" promptText="Версия загрузчика" maxWidth="Infinity" prefHeight="40"/></VBox>
+                    </HBox>
+                </VBox>
+                <HBox alignment="CENTER_RIGHT"><Button text="Готово" onAction="#closeModal" styleClass="accent-button"/></HBox>
+            </VBox>
+
+            <VBox fx:id="accountDialog" styleClass="dialog, small-dialog" prefWidth="500" maxWidth="500" maxHeight="-Infinity" visible="false" managed="false" spacing="16">
+                <HBox alignment="CENTER_LEFT"><Label text="Профиль игрока" styleClass="dialog-title"/><Region HBox.hgrow="ALWAYS"/><Button styleClass="dialog-close-inline, icon-button" userData="close" onAction="#closeModal"/></HBox>
+                <VBox styleClass="card" spacing="10">
+                    <Label text="Активный профиль" styleClass="field-label"/>
+                    <ComboBox fx:id="accountComboBox" maxWidth="Infinity" prefHeight="40"/>
+                    <Button text="Войти через Microsoft" onAction="#handleMicrosoftLogin" styleClass="accent-button" maxWidth="Infinity"/>
+                    <Button text="Скин персонажа…" onAction="#openSkins" styleClass="soft-button" maxWidth="Infinity"/>
+                </VBox>
+                <VBox fx:id="msCodeCard" styleClass="card, code-card" spacing="8" visible="false" managed="false">
+                    <Label text="Код для входа в Microsoft" styleClass="field-label"/>
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Label fx:id="msCodeLabel" text="" styleClass="code-value"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Button text="Скопировать" onAction="#handleCopyMsCode" styleClass="soft-button"/>
+                    </HBox>
+                    <Label fx:id="msCodeHint" text="" wrapText="true" styleClass="hint"/>
+                </VBox>
+                <VBox styleClass="card" spacing="10">
+                    <Label text="Offline-профиль" styleClass="field-label"/>
+                    <HBox spacing="8">
+                        <TextField fx:id="usernameField" promptText="Ник (3–16 символов)" HBox.hgrow="ALWAYS"/>
+                        <Button text="Добавить" onAction="#handleAddOfflineAccount" styleClass="soft-button"/>
+                    </HBox>
+                </VBox>
+                <Button text="Удалить выбранный профиль" onAction="#handleDeleteAccount" styleClass="danger-button" maxWidth="Infinity"/>
+            </VBox>
+
+            <VBox fx:id="skinsDialog" styleClass="dialog, small-dialog" prefWidth="540" maxWidth="540" maxHeight="-Infinity" visible="false" managed="false" spacing="14">
+                <HBox alignment="CENTER_LEFT"><Label text="Скин" styleClass="dialog-title"/><Region HBox.hgrow="ALWAYS"/><Label text="тяни мышью · колесо — масштаб" styleClass="hint"/><Button styleClass="dialog-close-inline, icon-button" userData="close" onAction="#closeModal"/></HBox>
+                <StackPane fx:id="skinPreviewHost" prefHeight="300" minHeight="260" styleClass="skin-preview-host"/>
+                <HBox spacing="8" alignment="CENTER_LEFT">
+                    <ComboBox fx:id="skinVariantComboBox" prefWidth="160" promptText="Модель"/>
+                    <Button text="Загрузить PNG" onAction="#handleUploadSkin" styleClass="accent-button" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                    <Button text="Обновить" onAction="#handleRefreshSkin" styleClass="soft-button"/>
+                </HBox>
+                <Label fx:id="skinStatusLabel" text="Выберите Microsoft-аккаунт для просмотра скина." wrapText="true" styleClass="hint"/>
+            </VBox>
+
+            <VBox fx:id="newsDialog" styleClass="dialog, small-dialog" prefWidth="620" maxWidth="620" prefHeight="440" maxHeight="440" visible="false" managed="false" spacing="14">
+                <HBox alignment="CENTER_LEFT"><Label fx:id="newsDialogTitle" text="" styleClass="dialog-title"/><Region HBox.hgrow="ALWAYS"/><Button styleClass="dialog-close-inline, icon-button" userData="close" onAction="#closeModal"/></HBox>
+                <TextArea fx:id="newsDialogText" editable="false" wrapText="true" VBox.vgrow="ALWAYS" styleClass="news-text"/>
+                <HBox alignment="CENTER_RIGHT" spacing="8"><Button fx:id="newsOpenButton" text="Открыть на сайте" onAction="#openNewsLink" styleClass="accent-button"/></HBox>
+            </VBox>
+        </StackPane>
+    </StackPane>
+</StackPane>
