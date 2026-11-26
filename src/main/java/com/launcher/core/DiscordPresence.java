@@ -6,9 +6,6 @@ import com.google.gson.JsonParser;
 
 import java.io.Closeable;
 import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.StandardOpenOption;
-import java.time.LocalTime;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -67,19 +64,9 @@ public final class DiscordPresence {
 
     private DiscordPresence() { }
 
-    private static void log(String text) {
-        try {
-            File file = new File(SettingsManager.configFile().getParentFile(), ".nexus_discord.log");
-            if (file.length() > 200_000) Files.deleteIfExists(file.toPath());
-            Files.writeString(file.toPath(), LocalTime.now().withNano(0) + " " + text + System.lineSeparator(), StandardCharsets.UTF_8,
-                    StandardOpenOption.CREATE, StandardOpenOption.APPEND);
-        } catch (Exception ignored) { }
-    }
-
     private synchronized void begin() {
         if (scheduler != null) return;
         launcherStartedAt = System.currentTimeMillis();
-        log("start, client_id=" + CLIENT_ID + ", os=" + System.getProperty("os.name"));
         scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread thread = new Thread(r, "nexus-discord");
             thread.setDaemon(true);
@@ -137,8 +124,7 @@ public final class DiscordPresence {
             String payload = activity.toString();
             if (payload.equals(lastPayload) && now - lastSentAt < 30_000) return;
             exchange(connection, activityFrame(activity), 8000);
-            if (!payload.equals(lastPayload)) log("activity: " + payload);
-            lastPayload = payload;
+                        lastPayload = payload;
             lastSentAt = now;
         } catch (Throwable t) {
             dropConnection(t);
@@ -158,7 +144,6 @@ public final class DiscordPresence {
     }
 
     private void dropConnection(Throwable why) {
-        if (why != null) log("connection dropped: " + why);
         if (connection != null) connection.close();
         connection = null;
         lastPayload = null;
@@ -267,31 +252,22 @@ public final class DiscordPresence {
         boolean alive() { return alive; }
 
         static Connection open(String clientId, ExecutorService io) {
-            boolean anyPipe = false;
             for (int i = 0; i < 10; i++) {
                 Connection connection = null;
                 try {
                     connection = connect(i);
                     if (connection == null) continue;
-                    anyPipe = true;
                     final Connection candidate = connection;
                     Future<?> hello = io.submit(() -> { candidate.handshake(clientId); return null; });
                     try {
                         hello.get(6, TimeUnit.SECONDS);
-                        log("connected to discord-ipc-" + i);
                         return connection;
                     } catch (TimeoutException timeout) {
                         hello.cancel(true);
-                        log("discord-ipc-" + i + ": handshake timed out");
-                    } catch (java.util.concurrent.ExecutionException e) {
-                        log("discord-ipc-" + i + ": handshake failed: " + e.getCause());
-                    }
-                } catch (Exception e) {
-                    log("discord-ipc-" + i + ": " + e);
-                }
+                    } catch (java.util.concurrent.ExecutionException ignored) { }
+                } catch (Exception ignored) { }
                 if (connection != null) connection.close();
             }
-            if (!anyPipe) log("Discord IPC pipe not found (is the Discord desktop app running?)");
             return null;
         }
 
@@ -357,7 +333,6 @@ public final class DiscordPresence {
                 if (frame.opcode == 3) { send(4, frame.text); continue; }
                 JsonObject json = parse(frame.text);
                 if (json != null && json.has("evt") && !json.get("evt").isJsonNull() && "ERROR".equals(json.get("evt").getAsString())) {
-                    log("Discord rejected the activity: " + frame.text);
                 }
                 if (json != null && json.has("cmd") && "SET_ACTIVITY".equals(json.get("cmd").getAsString())) return;
             }
