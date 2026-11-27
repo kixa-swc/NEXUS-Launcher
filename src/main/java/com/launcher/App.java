@@ -105,6 +105,7 @@ public class App extends Application {
     @Override
     public void stop() {
         DiscordPresence.stop();
+        com.launcher.chat.ChatHub.shutdown();
         if (tray != null) tray.remove();
     }
 

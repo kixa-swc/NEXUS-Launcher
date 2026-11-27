@@ -18,11 +18,8 @@ import java.nio.channels.Channels;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -36,7 +33,10 @@ public final class DiscordPresence {
     public static final String LARGE_IMAGE = "nexus";
     public static final String BUTTON_LABEL = "GitHub";
     public static final String BUTTON_URL = "https://github.com/kixa-swc/NEXUS-Launcher";
-    private static final long ROTATE_MS = 10_000;
+    private static final long ROTATE_MS = 5_000;
+    private static final long MIN_SEND_MS = 4_000;
+    private static final long KEEPALIVE_MS = 30_000;
+    private static final long PING_EVERY_MS = 30_000;
     private static final long RECONNECT_MS = 15_000;
 
     private static final DiscordPresence INSTANCE = new DiscordPresence();
@@ -56,11 +56,15 @@ public final class DiscordPresence {
     private long nextRotateAt;
     private long lastSentAt;
     private long launcherStartedAt;
-    private int rotation;
     private GameSessions.Session anchor;
     private String anchorServer;
     private String lastPayload;
     private boolean wasEnabled = true;
+    private int page;
+    private volatile String pingedServer;
+    private volatile ServerPinger.Status pingStatus;
+    private volatile long pingedAt;
+    private volatile boolean pinging;
 
     private DiscordPresence() { }
 
@@ -112,19 +116,23 @@ public final class DiscordPresence {
             if (sessions.isEmpty()) {
                 anchor = null;
                 anchorServer = null;
-                rotation = 0;
+                page = 0;
                 nextRotateAt = 0;
                 activity = idleActivity();
             } else {
-                if (nextRotateAt == 0) nextRotateAt = now + ROTATE_MS;
-                if (now >= nextRotateAt) { rotation++; nextRotateAt = now + ROTATE_MS; }
                 chooseAnchor(sessions);
-                activity = buildActivity(sessions);
+                boolean advance = false;
+                if (nextRotateAt == 0) nextRotateAt = now + ROTATE_MS;
+                else if (now >= nextRotateAt) { advance = true; nextRotateAt = now + ROTATE_MS; }
+                refreshPing(now);
+                activity = buildActivity(anchor, advance, now);
             }
             String payload = activity.toString();
-            if (payload.equals(lastPayload) && now - lastSentAt < 30_000) return;
+            boolean changed = !payload.equals(lastPayload);
+            if (!changed && now - lastSentAt < KEEPALIVE_MS) return;
+            if (changed && lastPayload != null && now - lastSentAt < MIN_SEND_MS) return;
             exchange(connection, activityFrame(activity), 8000);
-                        lastPayload = payload;
+            lastPayload = payload;
             lastSentAt = now;
         } catch (Throwable t) {
             dropConnection(t);
@@ -176,34 +184,69 @@ public final class DiscordPresence {
     }
 
     private void chooseAnchor(List<GameSessions.Session> sessions) {
-        if (anchor != null && sessions.contains(anchor) && anchorServer != null) return;
-        anchor = null;
-        anchorServer = null;
-        for (GameSessions.Session session : sessions) {
-            if (session.server() != null) { anchor = session; anchorServer = session.server(); return; }
+        GameSessions.Session first = sessions.get(0);
+        for (GameSessions.Session session : sessions) if (session.startedAt() < first.startedAt()) first = session;
+        if (first != anchor) {
+            anchor = first;
+            page = 0;
+            nextRotateAt = 0;
         }
-        anchor = sessions.get(0);
+        anchorServer = first.server();
     }
 
-    private JsonObject buildActivity(List<GameSessions.Session> sessions) {
-        Set<String> nicks = new LinkedHashSet<>();
-        for (GameSessions.Session session : sessions) if (session.nick() != null && !session.nick().isBlank()) nicks.add(session.nick());
-        List<String> order = new ArrayList<>(nicks);
-        String nick = order.isEmpty() ? "Игрок" : order.get(Math.floorMod(rotation, order.size()));
+    private void refreshPing(long now) {
+        String target = anchorServer;
+        if (target == null || pinging) return;
+        if (target.equals(pingedServer) && now - pingedAt < PING_EVERY_MS) return;
+        pinging = true;
+        io.execute(() -> {
+            try {
+                ServerPinger.Status status = ServerPinger.ping(target, 3000);
+                pingStatus = status;
+                pingedServer = target;
+                pingedAt = System.currentTimeMillis();
+            } catch (RuntimeException ignored) {
+                pingedServer = target;
+                pingStatus = null;
+                pingedAt = System.currentTimeMillis();
+            } finally {
+                pinging = false;
+            }
+        });
+    }
 
-        GameSessions.Session shown = null;
-        for (GameSessions.Session session : sessions) {
-            if (!Objects.equals(session.nick(), nick)) continue;
-            if (shown == null) shown = session;
-            if (anchorServer != null && anchorServer.equals(session.server())) { shown = session; break; }
+    private List<String> pages(GameSessions.Session shown, long now) {
+        List<String> list = new ArrayList<>();
+        list.add(anchorServer == null ? "В главном меню" : serverText(anchorServer));
+        if (shown != null && shown.mc() != null && !shown.mc().isBlank()) {
+            String loader = shown.loader();
+            String text = "Minecraft " + shown.mc().trim();
+            if (loader != null && !loader.isBlank() && !loader.equalsIgnoreCase("vanilla")) {
+                text += " · " + Character.toUpperCase(loader.charAt(0)) + loader.substring(1);
+            }
+            list.add(text);
         }
-        String rank = shown == null || shown.rank() == null ? "Игрок" : shown.rank();
+        ServerPinger.Status status = pingStatus;
+        if (anchorServer != null && anchorServer.equals(pingedServer) && status != null && status.online()
+                && now - pingedAt < 120_000) {
+            list.add("Онлайн: " + status.players() + (status.maxPlayers() > 0 ? "/" + status.maxPlayers() : ""));
+        }
+        return list;
+    }
+
+    private JsonObject buildActivity(GameSessions.Session shown, boolean advance, long now) {
+        String nick = shown.nick() == null || shown.nick().isBlank() ? "Игрок" : shown.nick();
+        String rank = shown.rank() == null ? "Игрок" : shown.rank();
+
+        List<String> pages = pages(shown, now);
+        if (advance) page++;
+        if (page >= pages.size()) page = 0;
 
         JsonObject activity = new JsonObject();
         activity.addProperty("type", 0);
         activity.addProperty("details", clip(nick + " · " + rank, 120));
-        activity.addProperty("state", clip(anchorServer == null ? "В главном меню" : serverText(anchorServer), 120));
-        addCommon(activity, (anchor == null ? sessions.get(0) : anchor).startedAt());
+        activity.addProperty("state", clip(pages.get(page), 120));
+        addCommon(activity, shown.startedAt());
         return activity;
     }
 

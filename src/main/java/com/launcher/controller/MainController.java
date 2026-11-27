@@ -49,6 +49,9 @@ import com.launcher.ui.Icons;
 import com.launcher.ui.CrashDialog;
 import com.launcher.core.ModpackInstaller;
 import com.launcher.ui.AiChatDialog;
+import com.launcher.ui.ChatDialog;
+import com.launcher.chat.ChatHub;
+import com.launcher.chat.ChatService;
 import com.launcher.ui.ModsDialog;
 import com.launcher.ui.ServersDialog;
 import com.launcher.core.GameSessions;
@@ -306,6 +309,7 @@ public class MainController {
 
         setupShell();
         setupAiButton();
+        setupChat();
         if (launchButton != null) launchButton.setOnContextMenuRequested(e -> { openLaunchMenu(); e.consume(); });
 
         background.execute(() -> {
@@ -1444,7 +1448,7 @@ public class MainController {
 
     private void showDialog(Node dialog) {
         if (dialogNodes.isEmpty()) dialogNodes.addAll(List.of(settingsDialog, versionsDialog, accountDialog, skinsDialog, newsDialog, closeDialog, uninstallDialog));
-        for (Node extra : new Node[]{modsDialog, serversDialog, crashDialog, aiDialog}) {
+        for (Node extra : new Node[]{modsDialog, serversDialog, crashDialog, aiDialog, chatDialog}) {
             if (extra != null && !dialogNodes.contains(extra)) dialogNodes.add(extra);
         }
         for (Node node : dialogNodes) {
@@ -1453,7 +1457,7 @@ public class MainController {
             node.setManaged(on);
         }
         setActiveNav(dialog == versionsDialog ? "versions" : dialog == modsDialog ? "mods" : dialog == serversDialog ? "servers"
-                : dialog == settingsDialog ? "settings" : "home");
+                : dialog == chatDialog ? "chats" : dialog == settingsDialog ? "settings" : "home");
         collapseRail(true);
         modalLayer.setManaged(true);
         modalLayer.setVisible(true);
@@ -1572,6 +1576,44 @@ public class MainController {
         }
         showDialog(aiDialog);
         aiDialog.open();
+    }
+
+    private ChatDialog chatDialog;
+    private Label chatBadge;
+
+    private void setupChat() {
+        ChatService chat = ChatHub.service();
+        chat.addListener(new ChatService.Listener() {
+            @Override public void onRoster() { Platform.runLater(() -> updateChatBadge()); }
+            @Override public void onMessage(ChatService.Message message, boolean mine) { Platform.runLater(() -> updateChatBadge()); }
+            @Override public void onConnection(ChatService.Conn conn, String detail) { Platform.runLater(() -> updateChatBadge()); }
+        });
+        updateChatBadge();
+        background.execute(ChatHub::autostart);
+    }
+
+    private void updateChatBadge() {
+        if (chatBadge == null) return;
+        ChatService chat = ChatHub.service();
+        int n = chat.totalUnread() + chat.incoming().size();
+        chatBadge.setText(n > 99 ? "99+" : String.valueOf(n));
+        chatBadge.setVisible(n > 0);
+        chatBadge.setManaged(n > 0);
+    }
+
+    private void openChats() {
+        if (chatDialog == null) {
+            chatDialog = new ChatDialog(new ChatDialog.Host() {
+                @Override public void close() { closeModal(); }
+                @Override public String suggestedName() {
+                    Account a = accountComboBox == null ? null : accountComboBox.getValue();
+                    return a == null ? "" : a.getUsername();
+                }
+            });
+            modalLayer.getChildren().add(chatDialog);
+        }
+        showDialog(chatDialog);
+        chatDialog.open();
     }
 
     private ServersDialog serversDialog;
@@ -1873,6 +1915,15 @@ public class MainController {
         addNav("versions", "layers", "Версии", this::openVersions);
         addNav("mods", "puzzle", "Моды", this::openMods);
         addNav("servers", "server", "Серверы", this::openServers);
+        StackPane chatIcon = addNav("chats", "chat", "Чаты", this::openChats);
+        chatBadge = new Label();
+        chatBadge.getStyleClass().add("nav-badge");
+        chatBadge.setVisible(false);
+        chatBadge.setManaged(false);
+        chatBadge.setMouseTransparent(true);
+        StackPane.setAlignment(chatBadge, Pos.TOP_RIGHT);
+        StackPane.setMargin(chatBadge, new Insets(-6, 8, 0, 0));
+        chatIcon.getChildren().add(chatBadge);
         addNav("news", "news", "Новости", this::toggleNews);
         addNav("settings", "gear", "Настройки", this::openSettings);
         setActiveNav("home");
@@ -1890,7 +1941,7 @@ public class MainController {
         applyRailProgress(railProgress.get());
     }
 
-    private void addNav(String id, String icon, String title, Runnable action) {
+    private StackPane addNav(String id, String icon, String title, Runnable action) {
         Label label = new Label(title);
         label.getStyleClass().add("nav-label");
         Node glyph = Icons.icon(icon, 22);
@@ -1908,6 +1959,7 @@ public class MainController {
         navButtons.put(id, button);
         navBox.getChildren().add(button);
         railExpandOnly.add(label);
+        return iconBox;
     }
 
     private void closeModalAndHome() {
